@@ -1,30 +1,42 @@
 /* eslint-disable prettier/prettier */
-const fs = require('fs').promises;
+const fsPromises = require('fs').promises;
 const path = require('path');
 
 async function copyDir() {
+  const sourceDir = path.join(__dirname, 'files');
+  const targetDir = path.join(__dirname, 'files-copy');
+
   try {
-    // Шаг 2: Создать папку 'files-copy', если ее еще не существует
-    const copyFolderPath = path.join(__dirname, 'files-copy');
-    await fs.mkdir(copyFolderPath, { recursive: true });
-
-    // Шаг 3: Прочитать содержимое папки 'files'
-    const filesFolderPath = path.join(__dirname, 'files');
-    const files = await fs.readdir(filesFolderPath);
-
-    // Шаг 4: Скопировать файлы из папки 'files' в папку 'files-copy'
-    for (const file of files) {
-      const sourcePath = path.join(filesFolderPath, file);
-      const destinationPath = path.join(copyFolderPath, file);
-
-      await fs.copyFile(sourcePath, destinationPath);
+    // Проверяем наличие папки files-copy и удаляем её, если она существует
+    const targetExists = await fsPromises
+      .access(targetDir)
+      .then(() => true)
+      .catch(() => false);
+    if (targetExists) {
+      console.log('Удаление существующей папки files-copy');
+      await fsPromises.rm(targetDir, { recursive: true });
     }
 
-    console.log('Папка успешно скопирована!');
+    // Создаем папку files-copy
+    await fsPromises.mkdir(targetDir, { recursive: true });
+
+    // Читаем содержимое папки files
+    const files = await fsPromises.readdir(sourceDir);
+
+    // Копируем каждый файл
+    for (const file of files) {
+      const sourcePath = path.join(sourceDir, file);
+      const targetPath = path.join(targetDir, file);
+
+      // Копируем файл
+      await fsPromises.copyFile(sourcePath, targetPath);
+    }
+
+    console.log('Копирование завершено');
   } catch (error) {
-    console.error('Ошибка при копировании папки:', error.message);
+    console.error('Ошибка при копировании:', error.message);
   }
 }
 
-// Вызовем функцию copyDir
+// Вызываем функцию
 copyDir();
